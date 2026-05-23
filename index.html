@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PinGenius – Dein Pinterest System Companion</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rouge: #C4545A;
+    --rouge-dark: #9B3A3F;
+    --rouge-light: #E8A0A3;
+    --creme: #FAF6F0;
+    --creme-dark: #F0E8DC;
+    --gold: #C9A84C;
+    --gold-light: #E8D5A0;
+    --dark: #2A1F1F;
+    --text: #4A3535;
+    --muted: #8A7070;
+    --white: #FFFFFF;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--creme);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      radial-gradient(ellipse at 20% 10%, rgba(196,84,90,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 90%, rgba(201,168,76,0.06) 0%, transparent 50%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23C4545A' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    padding: 40px 0 32px;
+    text-align: center;
+    position: relative;
+  }
+
+  .logo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--rouge);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .logo-badge::before { content: '◆'; font-size: 8px; }
+
+  h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(36px, 6vw, 58px);
+    font-weight: 300;
+    color: var(--dark);
+    line-height: 1.1;
+    letter-spacing: -1px;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--rouge);
+  }
+
+  .subtitle {
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 15px;
+    font-weight: 300;
+    letter-spacing: 0.3px;
+  }
+
+  /* Decorative line */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 28px 0;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--rouge-light));
+  }
+  .divider::after { background: linear-gradient(to left, transparent, var(--rouge-light)); }
+  .divider span { color: var(--gold); font-size: 14px; }
+
+  /* Tab Navigation */
+  .tabs {
+    display: flex;
+    background: white;
+    border-radius: 16px;
+    padding: 6px;
+    gap: 4px;
+    box-shadow: 0 2px 20px rgba(196,84,90,0.08);
+    margin-bottom: 28px;
+    overflow-x: auto;
+  }
+
+  .tab-btn {
+    flex: 1;
+    min-width: 120px;
+    padding: 12px 16px;
+    border: none;
+    background: transparent;
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--muted);
+    transition: all 0.25s ease;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .tab-btn:hover { background: var(--creme-dark); color: var(--text); }
+
+  .tab-btn.active {
+    background: var(--rouge);
+    color: white;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(196,84,90,0.3);
+  }
+
+  /* Cards */
+  .card {
+    background: white;
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 4px 30px rgba(42,31,31,0.06);
+    border: 1px solid rgba(196,84,90,0.08);
+    animation: fadeUp 0.4s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px;
+    font-weight: 400;
+    color: var(--dark);
+    margin-bottom: 6px;
+  }
+
+  .card-desc {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 24px;
+    line-height: 1.6;
+  }
+
+  /* Form Elements */
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--rouge-dark);
+    margin-bottom: 8px;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    padding: 14px 18px;
+    border: 1.5px solid var(--creme-dark);
+    border-radius: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--creme);
+    transition: all 0.2s ease;
+    outline: none;
+    appearance: none;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--rouge-light);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(196,84,90,0.08);
+  }
+
+  textarea { resize: vertical; min-height: 80px; }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .form-group { margin-bottom: 20px; }
+
+  /* Buttons */
+  .btn-primary {
+    width: 100%;
+    padding: 16px 24px;
+    background: linear-gradient(135deg, var(--rouge) 0%, var(--rouge-dark) 100%);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 16px rgba(196,84,90,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(196,84,90,0.35);
+  }
+
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  /* Results */
+  .results {
+    margin-top: 28px;
+    display: none;
+  }
+
+  .results.visible { display: block; animation: fadeUp 0.4s ease; }
+
+  .results-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .results-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  .results-line {
+    flex: 1;
+    height: 1px;
+    background: var(--creme-dark);
+  }
+
+  .idea-card {
+    background: var(--creme);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 12px;
+    border-left: 3px solid var(--rouge-light);
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .idea-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(135deg, rgba(196,84,90,0.03) 0%, transparent 60%);
+  }
+
+  .idea-card:hover {
+    border-left-color: var(--rouge);
+    box-shadow: 0 4px 16px rgba(196,84,90,0.1);
+    transform: translateX(4px);
+  }
+
+  .idea-num {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--rouge);
+    margin-bottom: 6px;
+  }
+
+  .idea-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+
+  .idea-text {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .idea-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  .tag {
+    padding: 4px 10px;
+    background: white;
+    border: 1px solid var(--rouge-light);
+    border-radius: 100px;
+    font-size: 11px;
+    color: var(--rouge-dark);
+    font-weight: 500;
+  }
+
+  /* Loading */
+  .loading {
+    display: none;
+    text-align: center;
+    padding: 40px;
+    color: var(--muted);
+  }
+
+  .loading.visible { display: block; }
+
+  .spinner {
+    width: 36px;
+    height: 36px;
+    border: 2.5px solid var(--creme-dark);
+    border-top-color: var(--rouge);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-style: italic;
+    color: var(--rouge);
+  }
+
+  /* Seasonal Radar */
+  .season-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .season-card {
+    background: var(--creme);
+    border-radius: 14px;
+    padding: 18px;
+    border: 1.5px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+  }
+
+  .season-card:hover, .season-card.active {
+    border-color: var(--rouge-light);
+    background: white;
+    box-shadow: 0 4px 16px rgba(196,84,90,0.1);
+  }
+
+  .season-icon { font-size: 28px; margin-bottom: 8px; }
+  .season-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .season-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* Keywords */
+  .keyword-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: white;
+    border: 1.5px solid var(--creme-dark);
+    border-radius: 100px;
+    font-size: 13px;
+    color: var(--text);
+    margin: 4px;
+    transition: all 0.2s ease;
+    cursor: default;
+  }
+
+  .keyword-chip .volume {
+    font-size: 10px;
+    color: var(--gold);
+    font-weight: 500;
+  }
+
+  .keyword-chip:hover {
+    border-color: var(--rouge-light);
+    background: var(--creme);
+  }
+
+  /* Community Posts */
+  .post {
+    background: var(--creme);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 12px;
+  }
+
+  .post-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .post-meta { flex: 1; }
+  .post-name { font-size: 14px; font-weight: 500; color: var(--dark); }
+  .post-time { font-size: 11px; color: var(--muted); }
+  .post-text { font-size: 14px; line-height: 1.7; color: var(--text); }
+
+  .post-actions {
+    display: flex;
+    gap: 16px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(196,84,90,0.08);
+  }
+
+  .post-action {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color 0.2s;
+    background: none;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .post-action:hover { color: var(--rouge); }
+
+  /* New post area */
+  .new-post {
+    background: white;
+    border: 1.5px dashed var(--rouge-light);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 40px 0;
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 0.5px;
+  }
+
+  footer strong { color: var(--rouge); }
+
+  /* Tab panels */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Pin Option Buttons */
+  .pin-opt-btn {
+    padding: 10px 12px;
+    border: 1.5px solid var(--creme-dark);
+    border-radius: 10px;
+    background: white;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+  }
+  .pin-opt-btn:hover { border-color: var(--rouge-light); color: var(--text); }
+  .pin-opt-btn.active { border-color: var(--rouge); background: rgba(196,84,90,0.06); color: var(--rouge-dark); font-weight: 500; }
+
+  /* Tabs scrollable on mobile */
+  .tabs { overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .form-row { grid-template-columns: 1fr; }
+    .season-grid { grid-template-columns: repeat(2, 1fr); }
+    .card { padding: 24px 20px; }
+  }
+
+  /* Error */
+  .error-msg {
+    background: #FFF0F0;
+    border: 1px solid var(--rouge-light);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 13px;
+    color: var(--rouge-dark);
+    margin-top: 16px;
+  }
+
+  /* Likes counter effect */
+  @keyframes heartPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.4); }
+    100% { transform: scale(1); }
+  }
+  .liked { color: var(--rouge) !important; animation: heartPop 0.3s ease; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="logo-badge">Pinterest System Companion</div>
+    <h1>Pin<em>Genius</em></h1>
+    <p class="subtitle">Dein intelligentes Tool für mehr Reichweite & Ideen auf Pinterest</p>
+    <div id="limit-badge" style="display:inline-block;margin-top:14px;padding:6px 16px;border-radius:100px;font-size:12px;font-weight:500;letter-spacing:0.5px;transition:all 0.3s;"></div>
+  </header>
+
+  <!-- Limit Modal -->
+  <div id="limit-modal" style="display:none;position:fixed;inset:0;background:rgba(42,31,31,0.5);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:24px;">
+    <div style="background:var(--creme);border-radius:24px;padding:40px 32px;max-width:400px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(42,31,31,0.2);animation:fadeUp 0.3s ease;">
+      <div style="font-size:48px;margin-bottom:16px;">🌸</div>
+      <h3 style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:400;color:var(--dark);margin-bottom:12px;">Für heute fertig!</h3>
+      <p style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:24px;">Du hast deine <strong style="color:var(--rouge);">10 kostenlosen Anfragen</strong> für heute genutzt. Morgen früh wird dein Limit automatisch zurückgesetzt – frisch und bereit für neue Ideen! ✨</p>
+      <div style="background:linear-gradient(135deg,rgba(201,168,76,0.1),rgba(196,84,90,0.05));border-radius:14px;padding:16px;margin-bottom:24px;">
+        <div style="font-size:12px;color:var(--gold);font-weight:500;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Nächster Reset</div>
+        <div style="font-size:18px;font-family:'Cormorant Garamond',serif;color:var(--dark);" id="reset-time"></div>
+      </div>
+      <button onclick="closeLimitModal()" style="background:linear-gradient(135deg,var(--rouge),var(--rouge-dark));color:white;border:none;border-radius:12px;padding:14px 32px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;box-shadow:0 4px 16px rgba(196,84,90,0.3);">Verstanden 🌸</button>
+    </div>
+  </div>
+
+  <div class="divider"><span>✦</span></div>
+
+  <nav class="tabs">
+    <button class="tab-btn active" onclick="showTab('ideas')">✨ Blog-Ideen</button>
+    <button class="tab-btn" onclick="showTab('keywords')">📈 Keywords</button>
+    <button class="tab-btn" onclick="showTab('pins')">📌 Pin-Titel</button>
+    <button class="tab-btn" onclick="showTab('prompts')">🤖 Prompts</button>
+  </nav>
+
+  <!-- TAB 1: Blog Ideen -->
+  <div id="tab-ideas" class="tab-panel active">
+    <div class="card">
+      <h2 class="card-title">Blog-Ideen Generator</h2>
+      <p class="card-desc">Beschreibe deine Nische und erhalte maßgeschneiderte Blog-Ideen, die auf Pinterest performen.</p>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Deine Nische</label>
+          <input type="text" id="ideas-nische" placeholder="z.B. Nachhaltig leben, Yoga, Minimalismus..." value="Lifestyle & Minimalismus">
+        </div>
+        <div class="form-group">
+          <label>Zielgruppe</label>
+          <input type="text" id="ideas-zielgruppe" placeholder="z.B. Mütter, Frauen 25-40..." value="Frauen 25-40 Jahre">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Aktuelle Saison / Anlass</label>
+        <select id="ideas-saison">
+          <option>Frühling – Neuanfänge & Aufräumen</option>
+          <option>Sommer – Urlaub & Leichtigkeit</option>
+          <option>Herbst – Gemütlichkeit & Routine</option>
+          <option>Winter – Hygge & Jahresende</option>
+          <option>Ganzjährig – Evergreen Content</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Dein persönlicher Stil / Fokus</label>
+        <textarea id="ideas-stil" placeholder="Was macht deinen Blog einzigartig? Was liebst du zu schreiben?">Ich schreibe über bewussten Konsum, Selbstentwicklung und ein schöneres Alltagsleben.</textarea>
+      </div>
+
+      <button class="btn-primary" onclick="generateIdeas()">
+        <span>✨</span> Blog-Ideen generieren
+      </button>
+
+      <div class="loading" id="loading-ideas">
+        <div class="spinner"></div>
+        <p class="loading-text">Inspirierende Ideen werden kreiert...</p>
+      </div>
+
+      <div class="results" id="results-ideas">
+        <div class="results-header">
+          <span class="results-label">Deine Ideen</span>
+          <div class="results-line"></div>
+        </div>
+        <div id="ideas-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: Keywords -->
+  <div id="tab-keywords" class="tab-panel">
+    <div class="card">
+      <h2 class="card-title">Pinterest SEO Keywords</h2>
+      <p class="card-desc">Finde die besten Keywords für deine Nische – optimiert für Pinterest-Suche und Reichweite.</p>
+
+      <div class="form-group">
+        <label>Dein Thema oder Blog-Beitrag</label>
+        <input type="text" id="kw-thema" placeholder="z.B. Morgenroutine für mehr Energie..." value="Minimalismus im Alltag">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nische</label>
+          <input type="text" id="kw-nische" placeholder="z.B. Lifestyle" value="Lifestyle & Wellness">
+        </div>
+        <div class="form-group">
+          <label>Keyword-Typ</label>
+          <select id="kw-typ">
+            <option>Broad + Long-Tail Mix</option>
+            <option>Nur Long-Tail Keywords</option>
+            <option>Nur Broad Keywords</option>
+            <option>Saisonale Keywords</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="generateKeywords()">
+        <span>📈</span> Keywords finden
+      </button>
+
+      <div class="loading" id="loading-keywords">
+        <div class="spinner"></div>
+        <p class="loading-text">Pinterest-Keywords werden analysiert...</p>
+      </div>
+
+      <div class="results" id="results-keywords">
+        <div class="results-header">
+          <span class="results-label">Deine Keywords</span>
+          <div class="results-line"></div>
+        </div>
+        <div id="keywords-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: Pin Titel -->
+  <div id="tab-pins" class="tab-panel">
+    <div class="card">
+      <h2 class="card-title">Pin-Titel Generator</h2>
+      <p class="card-desc">Klickstarke Pin-Titel mit integrierten Keywords – für maximale Reichweite auf Pinterest.</p>
+
+      <div class="form-group">
+        <label>Dein Blog-Thema / Artikel</label>
+        <input type="text" id="pin-thema" placeholder="z.B. 10 Tipps für ein aufgeräumtes Zuhause..." value="Minimalistischer Kleiderschrank">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Stil des Pins</label>
+          <select id="pin-stil">
+            <option>Tipps & Tricks</option>
+            <option>How-To / Anleitung</option>
+            <option>Inspiration</option>
+            <option>Listicle (Top 5, 10...)</option>
+            <option>Persönliche Geschichte</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Emoji verwenden?</label>
+          <select id="pin-emoji">
+            <option>Ja – mit Emojis</option>
+            <option>Nein – ohne Emojis</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Haupt-Keywords (optional)</label>
+        <input type="text" id="pin-keywords" placeholder="z.B. Minimalismus, Capsule Wardrobe, aufräumen..." value="Minimalismus, Kleiderschrank, weniger ist mehr">
+      </div>
+
+      <button class="btn-primary" onclick="generatePinTitles()">
+        <span>📌</span> Pin-Titel erstellen
+      </button>
+
+      <div class="loading" id="loading-pins">
+        <div class="spinner"></div>
+        <p class="loading-text">Klickstarke Titel werden formuliert...</p>
+      </div>
+
+      <div class="results" id="results-pins">
+        <div class="results-header">
+          <span class="results-label">Deine Pin-Titel</span>
+          <div class="results-line"></div>
+        </div>
+        <div id="pins-list"></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- TAB: Prompts -->
+  <div id="tab-prompts" class="tab-panel">
+    <div class="card">
+      <h2 class="card-title">Prompt Builder</h2>
+      <p class="card-desc">Erstelle perfekte Prompts für ChatGPT – für Blog-Artikel und Pin-Bilder.</p>
+
+      <!-- Sub-tabs -->
+      <div style="display:flex;gap:8px;margin-bottom:24px;">
+        <button id="prompt-sub-blog" onclick="switchPromptTab('blog')" style="flex:1;padding:10px;border:1.5px solid var(--rouge);border-radius:10px;background:var(--rouge);color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;">📝 Blog-Artikel</button>
+        <button id="prompt-sub-pin" onclick="switchPromptTab('pin')" style="flex:1;padding:10px;border:1.5px solid var(--creme-dark);border-radius:10px;background:white;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;">🎨 Pin-Bild</button>
+      </div>
+
+      <!-- BLOG PROMPT BUILDER -->
+      <div id="prompt-blog">
+        <div style="background:linear-gradient(135deg,rgba(201,168,76,0.1),rgba(196,84,90,0.05));border-radius:14px;padding:16px;margin-bottom:20px;border-left:3px solid var(--gold);">
+          <div style="font-size:11px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-bottom:6px;">⚙️ Einmalige Einstellungen – werden gespeichert</div>
+          <div class="form-row" style="margin-bottom:12px;">
+            <div>
+              <label>AdSense Blöcke?</label>
+              <select id="blog-adsense" onchange="saveBlogSettings()">
+                <option value="nein">Nein</option>
+                <option value="1">Ja – 1 Block</option>
+                <option value="2">Ja – 2 Blöcke</option>
+                <option value="3">Ja – 3 Blöcke</option>
+              </select>
+            </div>
+            <div>
+              <label>VG Wort?</label>
+              <select id="blog-vgwort" onchange="saveBlogSettings()">
+                <option value="nein">Nein</option>
+                <option value="ja">Ja – Regeln berücksichtigen</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row" style="margin-bottom:0;">
+            <div>
+              <label>Schreibstil</label>
+              <select id="blog-stil" onchange="saveBlogSettings()">
+                <option>Locker & persönlich</option>
+                <option>Professionell & informativ</option>
+                <option>Warm & motivierend</option>
+                <option>Humorvoll & leicht</option>
+              </select>
+            </div>
+            <div>
+              <label>Zielgruppe</label>
+              <input type="text" id="blog-zielgruppe" placeholder="z.B. Frauen 25-40" oninput="saveBlogSettings()" value="">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Hauptkeyword</label>
+            <input type="text" id="blog-hauptkw" placeholder="z.B. Capsule Wardrobe">
+            <div style="margin-top:6px;">
+              <button onclick="showKeywordHelp()" style="background:none;border:none;color:var(--rouge);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline;">🔍 Noch keine Keywords? Hier entlang</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Wunsch-Artikellänge</label>
+            <select id="blog-laenge">
+              <option>Kurz (800–1.200 Wörter)</option>
+              <option>Mittel (1.500–2.000 Wörter)</option>
+              <option selected>Lang (2.500–3.000 Wörter)</option>
+              <option>Sehr lang (4.000+ Wörter)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>3 Nebenkeywords <span style="color:var(--muted);font-size:11px;text-transform:none;letter-spacing:0;">(kommagetrennt)</span></label>
+          <input type="text" id="blog-nebenkw" placeholder="z.B. minimalistischer Kleiderschrank, weniger Kleidung, Capsule Wardrobe Tipps">
+        </div>
+
+        <div class="form-group">
+          <label>Thema / Arbeitstitel</label>
+          <input type="text" id="blog-thema" placeholder="z.B. Wie ich meinen Kleiderschrank auf 30 Teile reduziert habe">
+        </div>
+
+        <button class="btn-primary" onclick="generateBlogPrompt()">
+          <span>📝</span> Blog-Prompt generieren
+        </button>
+
+        <div id="blog-prompt-result" style="display:none;margin-top:24px;">
+          <div class="results-header">
+            <span class="results-label">Dein ChatGPT Prompt</span>
+            <div class="results-line"></div>
+          </div>
+          <div style="background:var(--dark);border-radius:14px;padding:20px;position:relative;">
+            <pre id="blog-prompt-text" style="color:#F0E8DC;font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.8;white-space:pre-wrap;word-break:break-word;"></pre>
+            <button onclick="copyPrompt('blog-prompt-text')" style="position:absolute;top:14px;right:14px;background:var(--rouge);border:none;border-radius:8px;padding:6px 12px;color:white;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;">📋 Kopieren</button>
+          </div>
+
+          <!-- Titelbild Bereich -->
+          <div style="margin-top:16px;border:1.5px dashed var(--rouge-light);border-radius:16px;overflow:hidden;">
+            <button onclick="toggleTitelbild()" style="width:100%;padding:16px 20px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-family:'DM Sans',sans-serif;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:20px;">🖼️</span>
+                <div style="text-align:left;">
+                  <div style="font-size:14px;font-weight:500;color:var(--dark);">Titelbild & ALT-Text erstellen</div>
+                  <div style="font-size:12px;color:var(--muted);">Kein eigenes Foto? Prompt + ALT-Text direkt hier</div>
+                </div>
+              </div>
+              <span id="titelbild-arrow" style="color:var(--rouge);font-size:18px;transition:transform 0.3s;">▾</span>
+            </button>
+
+            <div id="titelbild-content" style="display:none;padding:0 20px 20px;">
+              <div style="height:1px;background:var(--creme-dark);margin-bottom:16px;"></div>
+
+              <div class="form-row" style="margin-bottom:14px;">
+                <div>
+                  <label>Bildstil</label>
+                  <select id="bild-stil">
+                    <option>Hell & Minimalistisch</option>
+                    <option>Warm & Natürlich</option>
+                    <option>Flat Lay von oben</option>
+                    <option>Lifestyle Stimmungsbild</option>
+                    <option>Clean Studio Look</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Tool</label>
+                  <select id="bild-tool">
+                    <option>ChatGPT / DALL-E</option>
+                    <option>Midjourney</option>
+                    <option>Canva KI</option>
+                    <option>Adobe Firefly</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom:14px;">
+                <label>Farben / Brand (optional)</label>
+                <input type="text" id="bild-farben" placeholder="z.B. creme, rouge, gold – oder leer lassen">
+              </div>
+
+              <button onclick="generateTitelbildPrompt()" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--rouge),var(--rouge-dark));color:white;border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;box-shadow:0 4px 12px rgba(196,84,90,0.25);">
+                🖼️ Bild-Prompt & ALT-Text generieren
+              </button>
+
+              <div id="titelbild-result" style="display:none;margin-top:16px;display:none;">
+                <div style="margin-bottom:12px;">
+                  <div style="font-size:11px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:var(--rouge-dark);margin-bottom:8px;">Bild-Prompt</div>
+                  <div style="background:var(--dark);border-radius:12px;padding:16px;position:relative;">
+                    <pre id="titelbild-prompt-text" style="color:#F0E8DC;font-family:'DM Sans',sans-serif;font-size:12px;line-height:1.8;white-space:pre-wrap;word-break:break-word;"></pre>
+                    <button onclick="copyPrompt('titelbild-prompt-text')" style="position:absolute;top:10px;right:10px;background:var(--rouge);border:none;border-radius:6px;padding:5px 10px;color:white;font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif;">📋 Kopieren</button>
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:11px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:var(--rouge-dark);margin-bottom:8px;">ALT-Text <span style="color:var(--muted);font-size:10px;text-transform:none;letter-spacing:0;">(für Barrierefreiheit & SEO)</span></div>
+                  <div style="background:white;border:1.5px solid var(--creme-dark);border-radius:12px;padding:16px;position:relative;">
+                    <p id="titelbild-alt-text" style="font-size:13px;color:var(--text);line-height:1.7;padding-right:70px;"></p>
+                    <button onclick="copyAltText()" style="position:absolute;top:10px;right:10px;background:none;border:1px solid var(--rouge-light);border-radius:6px;padding:5px 10px;color:var(--rouge-dark);font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif;">📋 Kopieren</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PIN PROMPT BUILDER -->
+      <div id="prompt-pin" style="display:none;">
+        <div style="display:grid;gap:16px;">
+
+          <div class="form-group">
+            <label>Was soll der Pin zeigen?</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;">
+              <button class="pin-opt-btn active" onclick="selectPinOpt(this,'motiv','lifestyle')" data-group="motiv" data-val="lifestyle">🌿 Lifestyle/Stimmung</button>
+              <button class="pin-opt-btn" onclick="selectPinOpt(this,'motiv','text')" data-group="motiv" data-val="text">✍️ Text-dominiert</button>
+              <button class="pin-opt-btn" onclick="selectPinOpt(this,'motiv','vorher')" data-group="motiv" data-val="vorher">↔️ Vorher/Nachher</button>
+              <button class="pin-opt-btn" onclick="selectPinOpt(this,'motiv','flatlay')" data-group="motiv" data-val="flatlay">📷 Flat Lay</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Stil & Feeling</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;">
+              <button class="pin-opt-btn active" onclick="selectPinOpt(this,'stil','minimal')" data-group="stil" data-val="minimal">🤍 Hell & Minimalistisch</button>
+              <button class="pin-opt-btn" onclick="selectPinOpt(this,'stil','warm')" data-group="stil" data-val="warm">🍂 Warm & Gemütlich</button>
+              <button class="pin-opt-btn" onclick="selectPinOpt(this,'stil','bold')" data-group="stil" data-val="bold">⚡ Auffällig & Kontraststark</button>
+              <button class="pin-opt-btn" onclick="selectPinOpt(this,'stil','brand')" data-group="stil" data-val="brand">🎨 In meinem Brand</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Ziel des Pins</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;">
+              <button class="pin-opt-btn active" onclick="selectPinOpt(this,'ziel','traffic')" data-group="ziel" data-val="traffic">🔗 Blog-Traffic</button>
+              <button class="pin-opt-btn" onclick="selectPinOpt(this,'ziel','saves')" data-group="ziel" data-val="saves">❤️ Saves maximieren</button>
+              <button class="pin-opt-btn" onclick="selectPinOpt(this,'ziel','produkt')" data-group="ziel" data-val="produkt">🛍️ Produkt verkaufen</button>
+              <button class="pin-opt-btn" onclick="selectPinOpt(this,'ziel','reichweite')" data-group="ziel" data-val="reichweite">📢 Reichweite aufbauen</button>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Hauptkeyword / Thema</label>
+              <input type="text" id="pin-prompt-kw" placeholder="z.B. Capsule Wardrobe">
+            </div>
+            <div class="form-group">
+              <label>Tool das sie nutzt</label>
+              <select id="pin-tool">
+                <option>ChatGPT / DALL-E</option>
+                <option>Midjourney</option>
+                <option>Canva KI</option>
+                <option>Adobe Firefly</option>
+              </select>
+            </div>
+          </div>
+
+          <button class="btn-primary" onclick="generatePinPrompt()">
+            <span>🎨</span> Pin-Prompt generieren
+          </button>
+
+          <div id="pin-prompt-result" style="display:none;">
+            <div class="results-header">
+              <span class="results-label">Dein Bild-Prompt</span>
+              <div class="results-line"></div>
+            </div>
+            <div style="background:var(--dark);border-radius:14px;padding:20px;position:relative;">
+              <pre id="pin-prompt-text" style="color:#F0E8DC;font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.8;white-space:pre-wrap;word-break:break-word;"></pre>
+              <button onclick="copyPrompt('pin-prompt-text')" style="position:absolute;top:14px;right:14px;background:var(--rouge);border:none;border-radius:8px;padding:6px 12px;color:white;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;">📋 Kopieren</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Keyword Help Modal -->
+    <div id="keyword-help-modal" style="display:none;position:fixed;inset:0;background:rgba(42,31,31,0.5);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:24px;">
+      <div style="background:var(--creme);border-radius:24px;padding:36px 28px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(42,31,31,0.2);animation:fadeUp 0.3s ease;text-align:center;">
+        <div style="font-size:44px;margin-bottom:16px;">🔍</div>
+        <h3 style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:400;color:var(--dark);margin-bottom:10px;">Keywords finden</h3>
+        <p style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:24px;">Kein Problem! Unser <strong style="color:var(--rouge);">Keyword-Tool</strong> in der App zeigt dir genau die richtigen Pinterest-Keywords für deine Nische – schnell und einfach.</p>
+        <button onclick="closeKeywordHelp();showTabByName('keywords')" style="width:100%;background:linear-gradient(135deg,var(--rouge),var(--rouge-dark));color:white;border:none;border-radius:12px;padding:14px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:10px;">📈 Zum Keyword-Tool</button>
+        <button onclick="closeKeywordHelp()" style="width:100%;background:none;border:1.5px solid var(--creme-dark);border-radius:12px;padding:12px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--muted);cursor:pointer;">Schließen</button>
+      </div>
+    </div>
+  </div>
+
+
+
+  <footer>
+    <p>Dein <strong>PinGenius</strong> Companion · Teil des Pinterest Systems ✦</p>
+  </footer>
+</div>
+
+<script>
+  const API_URL = "/.netlify/functions/claude";
+  const DAILY_LIMIT = 10;
+
+  // ── Tageslimit ──────────────────────────────────────
+  function getTodayKey() { return 'pingenius_' + new Date().toISOString().slice(0,10); }
+  function getUsage() { return parseInt(localStorage.getItem(getTodayKey()) || '0'); }
+  function incrementUsage() { localStorage.setItem(getTodayKey(), getUsage() + 1); updateLimitBadge(); }
+  function hasReachedLimit() { return getUsage() >= DAILY_LIMIT; }
+  function updateLimitBadge() {
+    const remaining = Math.max(0, DAILY_LIMIT - getUsage());
+    const badge = document.getElementById('limit-badge');
+    if (badge) {
+      badge.textContent = remaining + ' von ' + DAILY_LIMIT + ' Anfragen übrig';
+      badge.style.background = remaining <= 2 ? 'rgba(196,84,90,0.15)' : 'rgba(201,168,76,0.12)';
+      badge.style.color = remaining <= 2 ? 'var(--rouge-dark)' : 'var(--gold)';
+    }
+  }
+  function showLimitModal() { document.getElementById('limit-modal').style.display = 'flex'; }
+  function closeLimitModal() { document.getElementById('limit-modal').style.display = 'none'; }
+
+  // ── Tab Navigation ──────────────────────────────────
+  function showTab(name) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    event.target.classList.add('active');
+  }
+  function showTabByName(name) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      if(b.getAttribute('onclick') && b.getAttribute('onclick').includes("'" + name + "'")) b.classList.add('active');
+    });
+  }
+
+  // ── Claude API ──────────────────────────────────────
+  async function callClaude(prompt, systemPrompt) {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    if (!response.ok) throw new Error('Verbindungsfehler – bitte nochmal versuchen.');
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+    return data.content[0].text;
+  }
+
+  function parseJSON(text) {
+    let clean = text.replace(/```json|```/g, '').trim();
+    try { return JSON.parse(clean); } catch(e) {}
+    const arrMatch = clean.match(/\[[\s\S]*\]/);
+    if (arrMatch) { try { return JSON.parse(arrMatch[0]); } catch(e) {} }
+    const objMatch = clean.match(/\{[\s\S]*\}/);
+    if (objMatch) { try { return JSON.parse(objMatch[0]); } catch(e) {} }
+    try {
+      let fixed = clean.replace(/,?\s*\{[^}]*$/, '');
+      const opens = (fixed.match(/\[/g)||[]).length - (fixed.match(/\]/g)||[]).length;
+      const openBraces = (fixed.match(/\{/g)||[]).length - (fixed.match(/\}/g)||[]).length;
+      for (let i=0;i<openBraces;i++) fixed+='}';
+      for (let i=0;i<opens;i++) fixed+=']';
+      return JSON.parse(fixed);
+    } catch(e) { throw new Error('Antwort konnte nicht verarbeitet werden. Bitte nochmal versuchen.'); }
+  }
+
+  // ── Helper: Loading State ────────────────────────────
+  function setLoading(loadingId, resultsId, listId, isLoading) {
+    document.getElementById(loadingId).classList.toggle('visible', isLoading);
+    if (!isLoading) return;
+    document.getElementById(resultsId).classList.remove('visible');
+    if (listId) document.getElementById(listId).innerHTML = '';
+  }
+
+  // ── Blog-Ideen ──────────────────────────────────────
+  async function generateIdeas() {
+    if (hasReachedLimit()) { showLimitModal(); return; }
+    const nische = document.getElementById('ideas-nische').value;
+    const zielgruppe = document.getElementById('ideas-zielgruppe').value;
+    const saison = document.getElementById('ideas-saison').value;
+    const stil = document.getElementById('ideas-stil').value;
+    setLoading('loading-ideas','results-ideas','ideas-list',true);
+    try {
+      const result = await callClaude(
+        `Nische: ${nische} | Zielgruppe: ${zielgruppe} | Saison: ${saison} | Stil: ${stil}. Erstelle 5 Pinterest-Blog-Ideen als JSON-Array.`,
+        `Pinterest-SEO Expertin. Antworte NUR mit JSON-Array, keine Backticks. Format: [{"titel":"Titel max 8 Worte","beschreibung":"1 Satz max 12 Worte","warum":"1 Satz max 10 Worte","tags":["tag1","tag2","tag3"]}] Genau 5 Eintraege.`
+      );
+      const ideas = parseJSON(result);
+      const list = document.getElementById('ideas-list');
+      ideas.forEach((idea, i) => {
+        const div = document.createElement('div');
+        div.className = 'idea-card';
+        div.innerHTML = `<div class="idea-num">Idee ${i+1} von ${ideas.length}</div>
+          <div class="idea-title">${idea.titel}</div>
+          <div class="idea-text">${idea.beschreibung}</div>
+          <div class="idea-text" style="margin-top:8px;color:var(--gold);font-size:12px;">📈 ${idea.warum}</div>
+          <div class="idea-tags">${idea.tags.map(t=>`<span class="tag">#${t}</span>`).join('')}</div>`;
+        list.appendChild(div);
+      });
+      incrementUsage();
+      document.getElementById('results-ideas').classList.add('visible');
+    } catch(e) {
+      document.getElementById('ideas-list').innerHTML = `<div class="error-msg">⚠️ ${e.message}</div>`;
+      document.getElementById('results-ideas').classList.add('visible');
+    } finally { setLoading('loading-ideas','results-ideas',null,false); }
+  }
+
+  // ── Keywords ────────────────────────────────────────
+  async function generateKeywords() {
+    if (hasReachedLimit()) { showLimitModal(); return; }
+    const thema = document.getElementById('kw-thema').value;
+    const nische = document.getElementById('kw-nische').value;
+    const typ = document.getElementById('kw-typ').value;
+    setLoading('loading-keywords','results-keywords','keywords-list',true);
+    try {
+      const result = await callClaude(
+        `Thema: ${thema} | Nische: ${nische} | Typ: ${typ}. Pinterest-SEO Keywords deutsch als JSON.`,
+        `Pinterest-SEO Expertin. NUR JSON ohne Backticks. Format: {"broad":[{"keyword":"...","suchvolumen":"hoch/mittel/niedrig","trend":"steigend/stabil/sinkend"}],"longtail":[{"keyword":"...","suchvolumen":"...","trend":"..."}],"tipp":"1 konkreter Satz"} Je 4 Broad, 6 Long-Tail Keywords.`
+      );
+      const data = parseJSON(result);
+      let html = '';
+      if (data.broad) {
+        html += `<div style="margin-bottom:16px;"><div style="font-size:11px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:var(--rouge-dark);margin-bottom:10px;">Broad Keywords</div><div>`;
+        data.broad.forEach(kw => {
+          const t = kw.trend==='steigend'?'↑':kw.trend==='sinkend'?'↓':'→';
+          html += `<span class="keyword-chip">${kw.keyword} <span class="volume">${t} ${kw.suchvolumen}</span></span>`;
+        });
+        html += `</div></div>`;
+      }
+      if (data.longtail) {
+        html += `<div style="margin-bottom:16px;"><div style="font-size:11px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:var(--rouge-dark);margin-bottom:10px;">Long-Tail Keywords</div><div>`;
+        data.longtail.forEach(kw => {
+          const t = kw.trend==='steigend'?'↑':kw.trend==='sinkend'?'↓':'→';
+          html += `<span class="keyword-chip" style="font-size:12px;">${kw.keyword} <span class="volume">${t} ${kw.suchvolumen}</span></span>`;
+        });
+        html += `</div></div>`;
+      }
+      if (data.tipp) {
+        html += `<div style="background:linear-gradient(135deg,rgba(201,168,76,0.1),rgba(196,84,90,0.05));border-radius:12px;padding:16px;border-left:3px solid var(--gold);"><div style="font-size:11px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-bottom:6px;">Pro-Tipp</div><div style="font-size:13px;line-height:1.6;color:var(--text);">${data.tipp}</div></div>`;
+      }
+      document.getElementById('keywords-list').innerHTML = html;
+      incrementUsage();
+      document.getElementById('results-keywords').classList.add('visible');
+    } catch(e) {
+      document.getElementById('keywords-list').innerHTML = `<div class="error-msg">⚠️ ${e.message}</div>`;
+      document.getElementById('results-keywords').classList.add('visible');
+    } finally { setLoading('loading-keywords','results-keywords',null,false); }
+  }
+
+  // ── Pin-Titel ────────────────────────────────────────
+  async function generatePinTitles() {
+    if (hasReachedLimit()) { showLimitModal(); return; }
+    const thema = document.getElementById('pin-thema').value;
+    const stil = document.getElementById('pin-stil').value;
+    const emoji = document.getElementById('pin-emoji').value;
+    const keywords = document.getElementById('pin-keywords').value;
+    setLoading('loading-pins','results-pins','pins-list',true);
+    try {
+      const result = await callClaude(
+        `Thema: ${thema} | Stil: ${stil} | Emojis: ${emoji} | Keywords: ${keywords}. Erstelle 6 klickstarke Pinterest-Pin-Titel als JSON.`,
+        `Pinterest-Marketing Expertin. NUR JSON-Array ohne Backticks. Format: [{"titel":"max 80 Zeichen","warum":"max 8 Worte","typ":"Frage/Zahl/HowTo/Versprechen/Liste/Story"}] Genau 6 Eintraege.`
+      );
+      const titles = parseJSON(result);
+      const list = document.getElementById('pins-list');
+      titles.forEach((item,i) => {
+        const div = document.createElement('div');
+        div.className = 'idea-card';
+        div.innerHTML = `<div class="idea-num">${item.typ||'Variante '+(i+1)}</div>
+          <div class="idea-title" style="font-size:20px;">${item.titel}</div>
+          <div class="idea-text" style="margin-top:6px;color:var(--gold);font-size:12px;">💡 ${item.warum}</div>
+          <div style="margin-top:10px;"><button onclick="copyText('${item.titel.replace(/'/g,"\'")}',this)" style="background:none;border:1px solid var(--rouge-light);border-radius:8px;padding:6px 12px;font-size:11px;color:var(--rouge-dark);cursor:pointer;font-family:'DM Sans',sans-serif;">📋 Kopieren</button></div>`;
+        list.appendChild(div);
+      });
+      incrementUsage();
+      document.getElementById('results-pins').classList.add('visible');
+    } catch(e) {
+      document.getElementById('pins-list').innerHTML = `<div class="error-msg">⚠️ ${e.message}</div>`;
+      document.getElementById('results-pins').classList.add('visible');
+    } finally { setLoading('loading-pins','results-pins',null,false); }
+  }
+
+  function copyText(text, btn) {
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = '✓ Kopiert!'; btn.style.color='var(--rouge)';
+      setTimeout(()=>{btn.textContent='📋 Kopieren';btn.style.color='var(--rouge-dark)';},2000);
+    });
+  }
+
+  // ── Prompt Sub-tabs ──────────────────────────────────
+  function switchPromptTab(tab) {
+    document.getElementById('prompt-blog').style.display = tab==='blog'?'block':'none';
+    document.getElementById('prompt-pin').style.display = tab==='pin'?'block':'none';
+    const blogBtn = document.getElementById('prompt-sub-blog');
+    const pinBtn = document.getElementById('prompt-sub-pin');
+    blogBtn.style.background = tab==='blog'?'var(--rouge)':'white';
+    blogBtn.style.color = tab==='blog'?'white':'var(--muted)';
+    blogBtn.style.borderColor = tab==='blog'?'var(--rouge)':'var(--creme-dark)';
+    pinBtn.style.background = tab==='pin'?'var(--rouge)':'white';
+    pinBtn.style.color = tab==='pin'?'white':'var(--muted)';
+    pinBtn.style.borderColor = tab==='pin'?'var(--rouge)':'var(--creme-dark)';
+  }
+
+  // ── Blog Settings (persist) ──────────────────────────
+  function saveBlogSettings() {
+    localStorage.setItem('pg_blog_adsense', document.getElementById('blog-adsense').value);
+    localStorage.setItem('pg_blog_vgwort', document.getElementById('blog-vgwort').value);
+    localStorage.setItem('pg_blog_stil', document.getElementById('blog-stil').value);
+    localStorage.setItem('pg_blog_zielgruppe', document.getElementById('blog-zielgruppe').value);
+  }
+  function loadBlogSettings() {
+    const s=(k,d)=>localStorage.getItem(k)||d;
+    const as=document.getElementById('blog-adsense'); if(as) as.value=s('pg_blog_adsense','nein');
+    const vg=document.getElementById('blog-vgwort'); if(vg) vg.value=s('pg_blog_vgwort','nein');
+    const st=document.getElementById('blog-stil'); if(st) st.value=s('pg_blog_stil','Locker & persönlich');
+    const zg=document.getElementById('blog-zielgruppe'); if(zg) zg.value=s('pg_blog_zielgruppe','');
+  }
+
+  // ── Blog-Artikel Prompt (KI-powered) ────────────────
+  async function generateBlogPrompt() {
+    if (hasReachedLimit()) { showLimitModal(); return; }
+    const hauptkw = document.getElementById('blog-hauptkw').value.trim();
+    const nebenkw = document.getElementById('blog-nebenkw').value.trim();
+    const thema = document.getElementById('blog-thema').value.trim();
+    const laenge = document.getElementById('blog-laenge').value;
+    const adsense = document.getElementById('blog-adsense').value;
+    const vgwort = document.getElementById('blog-vgwort').value;
+    const stil = document.getElementById('blog-stil').value;
+    const zielgruppe = document.getElementById('blog-zielgruppe').value || 'Lifestyle-Bloggerinnen';
+    if (!hauptkw || !thema) { alert('Bitte Hauptkeyword und Thema eingeben.'); return; }
+
+    const btn = document.querySelector('#prompt-blog .btn-primary');
+    btn.disabled = true;
+    btn.innerHTML = '<div style="width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;display:inline-block;margin-right:8px;vertical-align:middle;"></div> Prompt wird erstellt...';
+    document.getElementById('blog-prompt-result').style.display = 'none';
+
+    try {
+      const system = `Du bist eine erfahrene SEO-Texterin und Pinterest-Expertin fuer deutschsprachige Lifestyle-Blogs.
+Erstelle einen praezisen, massgeschneiderten ChatGPT-Prompt fuer einen Blog-Artikel.
+Der Prompt soll wirklich auf das Thema eingehen - mit passenden Schreibhinweisen, Struktur-Ideen und Ton.
+${vgwort==='ja' ? 'VG Wort: Mindestens 1.800 Zeichen, eigenstaendiger kreativer Text mit Mehrwert.' : ''}
+${adsense!=='nein' ? `AdSense: ${adsense} Werbeblock(e) als [ADSENSE] Platzhalter einbauen.` : ''}
+Antworte NUR mit dem fertigen Prompt. Kein Kommentar davor oder danach.`;
+
+      const userPrompt = `Erstelle einen massgeschneiderten ChatGPT-Prompt fuer diesen Blog-Artikel:
+Thema: ${thema}
+Hauptkeyword: ${hauptkw}
+Nebenkeywords: ${nebenkw||'keine'}
+Zielgruppe: ${zielgruppe}
+Schreibstil: ${stil}
+Laenge: ${laenge}
+
+Der Prompt soll Claude/ChatGPT anweisen einen vollstaendigen Artikel zu schreiben mit:
+- SEO-optimiertem Titel (Hauptkeyword enthalten)
+- Packender Einleitung die das Problem der Zielgruppe anspricht
+- H2/H3 Struktur mit Keywords
+- Passendem Ton und Stil fuer die Nische
+- Am Ende: SEO-URL, Meta-Beschreibung (max 155 Zeichen), Excerpt (2-3 Saetze), 3 Pin-Titel-Vorschlaege`;
+
+      const result = await callClaude(userPrompt, system);
+      incrementUsage();
+      document.getElementById('blog-prompt-text').textContent = result.trim();
+      document.getElementById('blog-prompt-result').style.display = 'block';
+      document.getElementById('blog-prompt-result').scrollIntoView({behavior:'smooth',block:'nearest'});
+    } catch(e) {
+      document.getElementById('blog-prompt-text').textContent = 'Fehler: ' + e.message;
+      document.getElementById('blog-prompt-result').style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<span>📝</span> Blog-Prompt generieren';
+    }
+  }
+
+  // ── Titelbild Toggle ─────────────────────────────────
+  function toggleTitelbild() {
+    const c = document.getElementById('titelbild-content');
+    const a = document.getElementById('titelbild-arrow');
+    const isOpen = c.style.display !== 'none';
+    c.style.display = isOpen ? 'none' : 'block';
+    a.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+  }
+
+  // ── Titelbild Prompt (KI-powered) ────────────────────
+  async function generateTitelbildPrompt() {
+    if (hasReachedLimit()) { showLimitModal(); return; }
+    const thema = document.getElementById('blog-thema').value.trim() || document.getElementById('blog-hauptkw').value.trim() || 'Lifestyle Blog';
+    const hauptkw = document.getElementById('blog-hauptkw').value.trim() || thema;
+    const stil = document.getElementById('bild-stil').value;
+    const tool = document.getElementById('bild-tool').value;
+    const farben = document.getElementById('bild-farben').value.trim();
+
+    const btn = document.querySelector('#titelbild-content .btn-primary') || document.getElementById('titelbild-btn');
+    if(btn) { btn.disabled=true; btn.innerHTML='<div style="width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;display:inline-block;margin-right:8px;vertical-align:middle;"></div> Wird erstellt...'; }
+    document.getElementById('titelbild-result').style.display = 'none';
+
+    try {
+      const system = `Du bist Expertin fuer Blog-Fotografie und KI-Bildgenerierung fuer deutschsprachige Lifestyle-Blogs.
+Erstelle einen professionellen, themengerechten Bildprompt fuer das Titelbild eines Blog-Artikels.
+Waehle Farben, Requisiten, Licht und Komposition die wirklich zum Thema passen.
+Antworte NUR mit dem fertigen Prompt. Kein Kommentar davor oder danach.`;
+
+      const userPrompt = `Erstelle einen ${tool}-Prompt fuer ein horizontales Blog-Titelbild (16:9, 1200x628px):
+Thema: ${thema}
+Hauptkeyword: ${hauptkw}
+Bildstil: ${stil}
+${farben ? 'Gewuenschte Farben: '+farben : 'Farben: passend zum Thema waehlen'}
+
+Der Prompt soll:
+- Themengerechte Requisiten, Farben und Atmosphaere enthalten
+- Fuer ${tool} optimiert sein
+- Professionell und hochwertig wirken
+- Kein Text im Bild
+- Hell und einladend fuer einen Lifestyle-Blog`;
+
+      const result = await callClaude(userPrompt, system);
+      incrementUsage();
+
+      // Generate ALT text locally (no token needed)
+      const altText = `${thema} – ${stil.toLowerCase()} Titelbild fuer einen Blog-Artikel ueber ${hauptkw}. Professionelles Lifestyle-Foto.`;
+
+      document.getElementById('titelbild-prompt-text').textContent = result.trim();
+      document.getElementById('titelbild-alt-text').textContent = altText;
+      document.getElementById('titelbild-result').style.display = 'block';
+      document.getElementById('titelbild-result').scrollIntoView({behavior:'smooth',block:'nearest'});
+    } catch(e) {
+      document.getElementById('titelbild-prompt-text').textContent = 'Fehler: ' + e.message;
+      document.getElementById('titelbild-result').style.display = 'block';
+    } finally {
+      if(btn) { btn.disabled=false; btn.innerHTML='🖼️ Bild-Prompt & ALT-Text generieren'; }
+    }
+  }
+
+  function copyPrompt(id) {
+    const text = document.getElementById(id).textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById(id).parentElement.querySelector('button');
+      if(btn) { btn.textContent='✓ Kopiert!'; setTimeout(()=>btn.textContent='📋 Kopieren',2000); }
+    });
+  }
+
+  function copyAltText() {
+    const text = document.getElementById('titelbild-alt-text').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('titelbild-alt-text').parentElement.querySelector('button');
+      if(btn) { btn.textContent='✓ Kopiert!'; setTimeout(()=>btn.textContent='📋 Kopieren',2000); }
+    });
+  }
+
+  // ── Pin Option Selector ──────────────────────────────
+  const pinSelections = { motiv:'lifestyle', stil:'minimal', ziel:'traffic' };
+  function selectPinOpt(btn, group, val) {
+    document.querySelectorAll(`[data-group="${group}"]`).forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    pinSelections[group] = val;
+  }
+
+  // ── Pin-Bild Prompt (KI-powered) ─────────────────────
+  async function generatePinPrompt() {
+    if (hasReachedLimit()) { showLimitModal(); return; }
+    const kw = document.getElementById('pin-prompt-kw').value.trim();
+    const tool = document.getElementById('pin-tool').value;
+    if (!kw) { alert('Bitte ein Hauptkeyword / Thema eingeben.'); return; }
+
+    const motivMap = {lifestyle:'Lifestyle/Stimmungsbild',text:'Text-dominiertes Design mit grossem Titel',vorher:'Vorher/Nachher Vergleich',flatlay:'Flat Lay von oben'};
+    const stilMap = {minimal:'hell, clean, minimalistisch, zarte Pastelltoene',warm:'warm, gemütlich, Erdtoene, Naturtexturen',bold:'auffaellig, hoher Kontrast, kraeftige Farben',brand:'im eigenen Brand-Design, konsistente Farben'};
+    const zielMap = {traffic:'Blog-Traffic, Call-to-Action einbauen',saves:'Saves maximieren, inspirierend und hochwertig',produkt:'Produkt im Fokus, professionell',reichweite:'Reichweite aufbauen, trendy und teilenswert'};
+
+    const btn = document.querySelector('#prompt-pin .btn-primary');
+    btn.disabled = true;
+    btn.innerHTML = '<div style="width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;display:inline-block;margin-right:8px;vertical-align:middle;"></div> Prompt wird erstellt...';
+    document.getElementById('pin-prompt-result').style.display = 'none';
+
+    try {
+      const system = `Du bist Expertin fuer Pinterest-Marketing und KI-Bildgenerierung.
+Erstelle einen praezisen, funktionierenden Bild-Prompt fuer das angegebene Tool.
+WICHTIG: Bei urheberrechtlich geschuetzten Charakteren/Marken (Harry Potter, Disney, Marvel etc.) formuliere kreativ um - beschreibe Aesthetik und Elemente ohne den geschuetzten Namen.
+Antworte NUR mit dem fertigen Prompt. Kein Kommentar davor oder danach.`;
+
+      const userPrompt = `Erstelle einen ${tool}-Prompt fuer einen vertikalen Pinterest-Pin (2:3 Format, 1000x1500px):
+Thema: ${kw}
+Motiv-Typ: ${motivMap[pinSelections.motiv]||'Lifestyle/Stimmungsbild'}
+Visueller Stil: ${stilMap[pinSelections.stil]||'hell und clean'}
+Ziel: ${zielMap[pinSelections.ziel]||'Saves maximieren'}
+
+Der Prompt soll themengerechte Farben, Requisiten und Atmosphaere enthalten die wirklich zum Thema passen. Fuer ${tool} optimiert. Deutschen Textvorschlag fuer das Bild einbauen.`;
+
+      const result = await callClaude(userPrompt, system);
+      incrementUsage();
+      document.getElementById('pin-prompt-text').textContent = result.trim();
+      document.getElementById('pin-prompt-result').style.display = 'block';
+      document.getElementById('pin-prompt-result').scrollIntoView({behavior:'smooth',block:'nearest'});
+    } catch(e) {
+      document.getElementById('pin-prompt-text').textContent = 'Fehler: ' + e.message;
+      document.getElementById('pin-prompt-result').style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<span>🎨</span> Pin-Prompt generieren';
+    }
+  }
+
+  // ── Keyword Help Modal ───────────────────────────────
+  function showKeywordHelp() { document.getElementById('keyword-help-modal').style.display='flex'; }
+  function closeKeywordHelp() { document.getElementById('keyword-help-modal').style.display='none'; }
+
+  // ── Init ─────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    updateLimitBadge();
+    loadBlogSettings();
+    const el = document.getElementById('reset-time');
+    if(el) el.textContent = 'Morgen um 00:00 Uhr';
+  });
+</script>
+</body>
+</html>
