@@ -1,3 +1,4 @@
+// PinGenius Function v2
 const https = require('https');
 
 exports.handler = async function(event, context) {
